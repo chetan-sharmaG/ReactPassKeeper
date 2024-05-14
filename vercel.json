@@ -1,5 +1,11 @@
 {
     "version": 2,
+    "builds":[
+      {
+        "src":"public/rindex.html",
+        "use":"@vercel/static-build"
+      }
+    ],
     "routes": [
       {
         "src": "/(.*)",
