@@ -79,7 +79,7 @@ const Manager = () => {
     const [accessToken, setaccessToken] = useState("")
     const ref = useRef()
     const refPass = useRef()
-    const [siteName, setsiteName] = useState("")
+    // const [siteName, setsiteName] = useState("")
     const [passwordArray, setpasswordArray] = useState([])
 
     function setAccessTokenCookie(accessToken) {
@@ -224,7 +224,7 @@ const Manager = () => {
 
     const editPassword = (id) => {
         saveform({ ...passwordArray.filter(i => i.id === id)[0], id: id })
-        setpasswordArray(passwordArray.filter(i => i.id != id))
+        setpasswordArray(passwordArray.filter(i => i.id !== id))
     }
 
     const deletePassword = async (id) => {
@@ -353,7 +353,7 @@ const Manager = () => {
             {profile ? (
                 <div className='absolute right-5 group '>
                     <div className='flex justify-end rounded-full  text-black font-bold px-2'>
-                        <img width={35} className='rounded-full cursor-pointer' src={profile.picture} alt="user image" />
+                        <img width={35} className='rounded-full cursor-pointer' src={profile.picture}  />
                         {/* <p>{profile.name}</p> */}
                     </div>
                     <div className='hidden px-2 p-1 mt-1 group-hover:flex flex-col rounded-sm bg-gray-200 h-[30%] divide-y-[1px] divide-black'>
@@ -372,7 +372,7 @@ const Manager = () => {
                 </div>
 
             ) : (
-                <div className="mt-1 absolute right-5  flex items-center justify-center bg-white gap-2 text-black font-bold group rounded-full px-3 border  border-white cursor-pointer" onClick={login}><span className='' >Login</span><img className="rounded-full  object-contain" width={25} src='../Icons/google.png' /></ div>
+                <div className="mt-1 absolute right-5  flex items-center justify-center bg-white gap-2 text-black font-bold group rounded-full px-3 border  border-white cursor-pointer" onClick={login}><span className='' >Login</span><img className="rounded-full  object-contain" width={25} src='./Icons/google.png' alt="" /></ div>
             )}
             {/* <div className="absolute top-0 z-[-2] h-screen w-screen bg-neutral-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div> */}
             <div className='container my-5 mx-auto  max-w-2xl pt-5 md:pt-0 '>
@@ -387,7 +387,7 @@ const Manager = () => {
                         <div className='relative w-full'>
                             <input ref={refPass} value={form.password} onChange={handleChange} placeholder='Enter Password' className='decoration rounded-full border border-green-300 w-full text-black px-4 p-1' type='password' name='password' id='password' />
                             <span className='absolute right-[4px] top-1 text-black'>
-                                <img ref={ref} onClick={passwordIconClick} width={26} className='p-1 cursor-pointer' src='../Icons/eye_closed.png'></img>
+                                <img ref={ref} onClick={passwordIconClick} width={26} className='p-1 cursor-pointer' src='./Icons/eye_closed.png' alt=''></img>
                             </span>
                         </div>
                     </div>
@@ -399,7 +399,7 @@ const Manager = () => {
                 </div>
                 <h1 className='text-xl mt-10 p-4 mb-1 text-yellow-500 '>Your Passwords</h1>
                 {passwordArray.length === 0 && <div className='text-white p-4'>No Passwords to show</div>}
-                {passwordArray.length != 0 &&
+                {passwordArray.length !== 0 &&
                     <table className="table-auto rounded-md overflow-hidden mx-auto mb-3 md:w-e text-white w-[90%]">
                         <thead className='bg-slate-800'>
                             <tr >
