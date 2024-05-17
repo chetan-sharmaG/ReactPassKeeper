@@ -10,38 +10,38 @@ import axios from 'axios'
 const Manager = () => {
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
+    const [localData, setLocalData] = useState(null)
+
     const login = useGoogleLogin({
         onSuccess: (codeResponse) => setUser(codeResponse),
         onError: (error) => console.log('Login Failed:', error)
     });
 
-    const setUserPassword =(token)=>{
+    const setUserPassword = (token) => {
         axios
-                    .get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${token}`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            Accept: 'application/json'
-                        }
-                    })
-                    .then((res) => {
-                        console.warn(res)
-                        setProfile(res.data);
-                        setAccessTokenCookie(token)
+            .get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${token}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/json'
+                }
+            })
+            .then((res) => {
+                console.warn(res)
+                setProfile(res.data);
+                setAccessTokenCookie(token)
 
-                    })
-                    .catch((err) => console.log(err));
+            })
+            .catch((err) => console.log(err));
     }
 
     function clearAccessTokenCookie() {
         document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        setaccessToken("")
     }
 
     useEffect(
         () => {
 
-            if(accessToken){
-
-            }
             if (user) {
                 // console.log(user)
                 axios
@@ -121,7 +121,19 @@ const Manager = () => {
             });
             // let req = await fetch("http://localhost:3000/")
             let pas = await req.json();
-            setpasswordArray(pas);
+            
+            let pass = localStorage.getItem("password")
+            
+            if (pass) {
+            //    console.log([...passwordArray,...JSON.parse(pass)])
+                setpasswordArray([...pas,...JSON.parse(pass)])
+                
+                // console.log(JSON.parse(pass))
+    
+             }else{
+                setpasswordArray(pas)
+             }
+             console.log(passwordArray)
         }
     }
 
@@ -134,17 +146,28 @@ const Manager = () => {
     }, [profile])
 
     useEffect(() => {
+
+        setLocalData(JSON.parse(localStorage.getItem("password")));
         const accessTokenData = getAccessTokenFromCookie();
         if (accessTokenData) {
-           
+
             setaccessToken("")
             setaccessToken(accessTokenData)
             setUserPassword(accessTokenData)
-            console.log("Access Token:", accessToken);
         } else {
             // Access token not found, handle accordingly
             console.log("Access Token not found");
         }
+
+        let pass = localStorage.getItem("password")
+        // console.log([...passwordArray,JSON.parse(pass)])
+        if (pass) {
+            console.log([...passwordArray,JSON.parse(pass)])
+            setpasswordArray(JSON.parse(pass))
+            console.log(JSON.parse(pass))
+
+         }
+
     }, [])
 
 
@@ -163,33 +186,52 @@ const Manager = () => {
     const savePassword = async () => {
 
         if (form.site.length > 3 && form.password.length > 3 && form.username.length > 3) {
+
+
+            var idGen = uuidv4()
+
+            if (user === null && accessToken.length === 0) {
+                console.log(user === null)
+                setpasswordArray([...passwordArray, { ...form, id: idGen }])
+
+                localStorage.setItem("password", JSON.stringify([...passwordArray, { ...form, id: idGen  }]))
+                setLocalData(JSON.stringify([...passwordArray, { ...form, id: idGen }]))
+                console.error(localStorage.getItem("password"))
+                return
+            }
+
+
             if (form.id) {
-                console.log('inside form id')
+                idGen = form.id
             }
             else {
                 console.log('else inside form id')
             }
-            setpasswordArray([...passwordArray, { ...form, id: uuidv4(), token: profile.id }])
+            setpasswordArray([...passwordArray, { ...form, id: idGen, token: profile.id }])
+
 
             // setpasswordArray(prevPasswordArray => [...prevPasswordArray, { ...form, id: uuidv4() }]);
 
             // localStorage.setItem("password", JSON.stringify([...passwordArray, { ...form, id: uuidv4() }]))
-            await fetch('https://pass-keeper-six.vercel.app/deleteDataDemo', {
+            console.log("Data sending for Delete " + JSON.stringify({ ...form, id: idGen, token: profile.id }))
+            let res1 = await fetch('https://pass-keeper-six.vercel.app/deleteDataDemo', {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     // 'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: JSON.stringify({ id: form.id, token: profile.id }),
+                body: JSON.stringify({ id: idGen, token: profile.id }),
             });
-            // let ar = await a.json()
-            // console.error(ar)
+            let res = await res1.json()
+            console.error(res1)
+            console.log("Data sending for Save " + JSON.stringify({ ...form, id: idGen, token: profile.id }))
+
             let req = await fetch('https://pass-keeper-six.vercel.app/sendDataDemo', {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ ...form, id: uuidv4(), token: profile.id }),
+                body: JSON.stringify({ ...form, id: idGen, token: profile.id ,sloc:'server' }),
             })
             let reqRes = await req.json()
             console.log(reqRes)
@@ -204,7 +246,7 @@ const Manager = () => {
                 theme: "dark",
 
             });
-            console.log([...passwordArray, { ...form, id: uuidv4() }])
+            console.log(passwordArray)
             saveform({ site: "", username: "", password: "" })
         }
         else {
@@ -222,6 +264,44 @@ const Manager = () => {
         }
     }
 
+    const syncData = async () => {
+        let pass = localStorage.getItem("password")
+        var parseData = JSON.parse(pass)
+        if (pass) {
+            
+            setpasswordArray([...passwordArray,...JSON.parse(pass)])
+            var dataArray = parseData;
+            var success = 0
+            for (var i = 0; i < dataArray.length; i++) {
+                console.log(dataArray);
+                // console.log(JSON.stringify({ ...dataArray[i], token: profile.id }))
+                // let res1 = await fetch('https://pass-keeper-six.vercel.app/syncData', {
+                //     method: "POST",
+                //     headers: {
+                //         "Content-Type": "application/json",
+                //         // 'Content-Type': 'application/x-www-form-urlencoded',
+                //     },
+                //     body: JSON.stringify({ ...dataArray[i], token: profile.id }),
+                // });
+                // let res = await res1.json()
+                var id = dataArray[i].id
+                // if (res.status === 200) {
+                //     console.log('pass')
+                // }
+                localStorage.setItem("password", JSON.stringify(passwordArray.filter(i => i.id !== id)))
+                setLocalData(JSON.stringify(passwordArray.filter(i => i.id !== id)))
+            }
+
+            // 
+
+
+
+
+
+
+        }
+    }
+
     const editPassword = (id) => {
         saveform({ ...passwordArray.filter(i => i.id === id)[0], id: id })
         setpasswordArray(passwordArray.filter(i => i.id !== id))
@@ -232,6 +312,30 @@ const Manager = () => {
         let c = window.confirm("Are you sure you want to delete the Password?")
         console.log(c)
         if (c) {
+            
+            let pass = localStorage.getItem("password")
+            if(pass.includes(id)){
+                console.log('includes')
+                console.log(JSON.parse(pass))
+                console.log(JSON.stringify(JSON.parse(pass).filter(i => i.id !== id)))
+                localStorage.setItem("password", JSON.stringify(JSON.parse(pass).filter(i => i.id !== id)))
+                setpasswordArray(passwordArray.filter(i => i.id !== id))
+                return
+            }
+
+            // localStorage.setItem("password", JSON.stringify(passwordArray.filter(i => i.id !== id)))
+            // setLocalData(JSON.stringify(passwordArray.filter(i => i.id !== id)))
+            // // saveform({ site: "", username: "", password: "" })
+            // 
+            // if (pass) {
+            //     setpasswordArray([...passwordArray,...JSON.parse(pass)])
+            // }
+            // if (user ===null && accessToken.length === 0 ) {
+            //     console.log(user)
+               
+
+            //     return
+            // }
             setpasswordArray(passwordArray.filter(i => i.id !== id))
             // localStorage.setItem("password",JSON.stringify(passwordArray.filter(i=>i.id!==id)))
             // saveform({ site: "", username: "", password: "" })
@@ -331,7 +435,6 @@ const Manager = () => {
 
         return siteName;
     }
-    // console.log(profile.length)
     return (
         <>
             <ToastContainer
@@ -346,19 +449,21 @@ const Manager = () => {
                 pauseOnHover
                 theme="light"
                 transition="Bounce"
-                limit={1}
+                limit={5}
             />
             {/* Same as */}
             <ToastContainer />
             {profile ? (
+                // <> <button className='bg-yellow' onClick={syncData}>Sync Data</button>
                 <div className='absolute right-5 group '>
                     <div className='flex justify-end rounded-full  text-black font-bold px-2'>
-                        <img width={35} className='rounded-full cursor-pointer' src={profile.picture}  />
+                        <img width={35} className='rounded-full cursor-pointer' src={profile.picture} />
                         {/* <p>{profile.name}</p> */}
                     </div>
                     <div className='hidden px-2 p-1 mt-1 group-hover:flex flex-col rounded-sm bg-gray-200 h-[30%] divide-y-[1px] divide-black'>
                         <span>{profile.name}</span>
                         <span className=''>{profile.email}</span>
+                        <span className='cursor-pointer' onClick={syncData}>Sync</span>
                         <span className='cursor-pointer' onClick={logOut}>Logout</span>
                     </div>
                     {/* <img src='../Icons/logout.pn' className='cursor-pointer' onClick={logOut} alt="Logout" width={20} ></img> */}
@@ -399,7 +504,9 @@ const Manager = () => {
                 </div>
                 <h1 className='text-xl mt-10 p-4 mb-1 text-yellow-500 '>Your Passwords</h1>
                 {passwordArray.length === 0 && <div className='text-white p-4'>No Passwords to show</div>}
-                {passwordArray.length !== 0 &&
+                {/* {localData!==null &&
+                    <>
+                    <h1 className='text-white text-xl '>Local Storage Data</h1>
                     <table className="table-auto rounded-md overflow-hidden mx-auto mb-3 md:w-e text-white w-[90%]">
                         <thead className='bg-slate-800'>
                             <tr >
@@ -410,7 +517,7 @@ const Manager = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {passwordArray.map((e, index) => {
+                            {localData.map((e, index) => {
                                 return (<tr key={index} className='bg-teal-800 '>
                                     <td className=' py-2  text-center '>
                                         <div className='flex items-center justify-center'>
@@ -454,7 +561,76 @@ const Manager = () => {
 
 
                         </tbody>
-                    </table>}
+                    </table>
+                    </>
+                } */}
+                    
+                {passwordArray.length !== 0 &&
+                <>
+                    {/* <h1 className='text-white text-2xl '> Passwords on Server  </h1> */}
+                    <table className="table-auto rounded-md overflow-hidden mx-auto mb-3 md:w-e text-white w-[90%]">
+                        <thead className='bg-slate-800'>
+                            <tr >
+                                <th className='py-2' >Site</th>
+                                <th className='py-2'>Username</th>
+                                <th className='py-2'>Password</th>
+                                <th className='py-2'>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {passwordArray.map((e, index) => {
+                                return (<tr key={index} className='bg-teal-800 '>
+                                    <td className=' py-2  text-center '>
+                                        <div className='flex items-center justify-center relative'>
+                                           {!("sloc" in e) && 
+                                           <div className='absolute left-3  flex items-center cursor-pointer'><script src="https://cdn.lordicon.com/lordicon.js"></script>
+                                           <lord-icon
+                                               src="https://cdn.lordicon.com/ogkflacg.json"
+                                               trigger="hover"
+                                               style={{width:"20px",height:"20px"}}>
+                                           </lord-icon></div>
+                                           } <a href={e.site} target='_blank'>{extractSiteName(e.site)}</a>
+                                            <div className='size-7 cursor-pointer' onClick={() => { copyText(e.site) }}>
+                                                <lord-icon
+                                                    src="https://cdn.lordicon.com/iykgtsbt.json"
+                                                    trigger="hover"
+                                                    colors="primary:yellow"
+                                                    style={{ width: "20px", height: "20px", paddingTop: "8px" }}
+                                                ></lord-icon>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className='py-2 e text-center '>
+                                        <div className='flex items-center justify-center'><span>{e.username}</span>
+                                            <div className='size-7 cursor-pointer' onClick={() => { copyText(e.username) }}>
+                                                <lord-icon src="https://cdn.lordicon.com/iykgtsbt.json"
+                                                    trigger="hover" colors="primary:yellow" style={{ "width": "20px", "height": "20px", "paddingTop": "8px" }}></lord-icon></div>
+
+
+                                        </div>
+                                    </td>
+                                    <td className='text-center  py-2'> <div className='flex items-center justify-center'><span>{"*".repeat(e.password.length)}</span>
+                                        <div className='size-7 cursor-pointer ' onClick={() => { copyText(e.password) }}>
+                                            <lord-icon src="https://cdn.lordicon.com/iykgtsbt.json"
+                                                trigger="hover" colors="primary:yellow" style={{ "width": "20px", "height": "20px", "paddingTop": "8px" }}></lord-icon></div>
+
+
+                                    </div>
+                                    </td>
+                                    <td className='text-center  py-2' >
+                                        <span className='cursor-pointer mx-1' onClick={() => { editPassword(e.id) }}> <lord-icon src="https://cdn.lordicon.com/gwlusjdu.json"
+                                            trigger="boomerang" colors="primary:yellow" style={{ "width": "20px", "height": "20px", "marginTop": "8px" }}></lord-icon></span>
+
+                                        <span className='cursor-pointer mx-1' onClick={() => { deletePassword(e.id) }}> <lord-icon src="https://cdn.lordicon.com/hjbrplwk.json"
+                                            trigger="boomerang" colors="primary:yellow" style={{ "width": "20px", "height": "20px", "marginTop": "8px" }}></lord-icon></span>
+                                    </td>
+                                </tr>)
+                            })}
+
+
+                        </tbody>
+                    </table>
+                    </>}
             </div>
         </>
     )
